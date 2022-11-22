@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Modal, Form, Button, Spinner } from "react-bootstrap";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productCategoriesActions } from "./../../store";
 import * as yup from "yup";
 
 const Add = ({ show, close, alert }) => {
-    const initData = () => {
-        return {
-            name: '',
-        }
+    const defaultVal = {
+        name: ''
     }
 
     const dispatch = useDispatch()
-    const productCategoryCreate = useSelector(x => x.productCategories.create)
+    const { create } = useSelector(x => x.productCategories)
     const [modalShow, setModalShow] = useState(false)
 
     const handleClose = () => {
@@ -26,7 +24,7 @@ const Add = ({ show, close, alert }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Create data success.' : 'Failed to create data.',
+                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -37,7 +35,7 @@ const Add = ({ show, close, alert }) => {
     }
 
     const { handleSubmit, formState: {errors, isSubmitting }, register, reset } = useForm({
-        defaultValues: initData(),
+        defaultValues: defaultVal,
         resolver: yupResolver(yup.object().shape({
             name: yup.string()
                 .required("This field is required.")
@@ -56,16 +54,16 @@ const Add = ({ show, close, alert }) => {
     useEffect(() => {
         if (!!show) {
             setModalShow(true)
-            reset(initData, {keepErrors: false})
+            reset(defaultVal, {keepErrors: false})
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [show])
 
     useEffect(() => {
-        if (!productCategoryCreate.loading && productCategoryCreate.success === true) handleAlert('success')
-        if (!productCategoryCreate.loading && productCategoryCreate.success === false) handleAlert('error')
+        if (!create.loading && create.success === true) handleAlert('success')
+        if (!create.loading && create.success === false) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategoryCreate])
+    }, [create])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">

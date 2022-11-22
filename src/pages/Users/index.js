@@ -1,165 +1,296 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Container, Row, Col, Card, ProgressBar, Button, Table, Spinner } from "react-bootstrap";
-import { isEmptyValue } from "./../../helpers/general"
-import { usersActions } from "./../../store";
+import { Container, Row, Col, Card, Button, Table, Spinner, Form, Badge } from "react-bootstrap";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { usersActions, userLevelsActions } from "./../../store";
+import { isEmptyValue } from "../../helpers/general";
+import Pagination from "./../../components/Pagination";
+import Alert from "./../../components/Alert";
+import Selectbox from "./../../components/Selectbox";
+// import Add from "./Add";
+// import Detail from "./Detail";
+
+const reactSwal = withReactContent(Swal.mixin({
+    customClass: {
+        confirmButton: 'btn btn-primary rounded-0 mr-2',
+        cancelButton: 'btn btn-default rounded-0'
+    },
+    buttonsStyling: false
+}))
 
 export const Users = () => {
-    const dispatch = useDispatch();
-    const { user, error } = useSelector(x => x.auth)
+    const dispatch = useDispatch()
     const users = useSelector(x => x.users)
+    const userLevels = useSelector(x => x.userLevels)
     const [loading, setLoading] = useState(true)
+    const [alert, setAlert] = useState(false)
+    const [filter, setFilter] = useState({
+        fullname: '',
+        username: '',
+        user_level_id: '',
+        email: ''
+    })
+    const [modal, setModal] = useState({
+        type: null,
+        show: false,
+        dataId: 0
+    })
+    const [currentFilter, setCurrentFilter] = useState({
+        page: 1,
+        order: 'name',
+        ...filter
+    })
+    const [optUserLevel, setOptUserLevel] = useState([{
+        value: '',
+        label: 'Choose...'
+    }])
+
+    const onChangeFilter = (key, val) => {
+        setFilter({ ...filter, [key]: val })
+    }
+
+    const onSubmitFilter = (e) => {
+        e.preventDefault()
+        setCurrentFilter({ ...currentFilter, ...filter, page: 1 })
+        setLoading(true)
+    }
+
+    const handleModal = (type, id) => {
+        setModal({
+            ...modal,
+            type: type || null,
+            show: !modal.show,
+            dataId: id || 0
+        })
+    }
+
+    const handleDelete = (id = 0) => {
+        if (!isEmptyValue(id)) {
+            reactSwal.fire({
+                title: 'Delete this data?',
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm'
+            }).then((action) => {
+                if (action.isConfirmed) {
+                    dispatch(usersActions.remove({ id: id }))
+                }
+            })
+        }
+    }
 
     useEffect(() => {
-        if (loading) dispatch(usersActions.getAll())
+        if (loading === true) dispatch(usersActions.getAll({ param: currentFilter }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading])
 
     useEffect(() => {
-        setLoading(users?.loading || false)
+        setLoading(users.all?.loading || false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [users])
-console.log(users.result)
-    return (
-        <Container fluid>
-            <div className="d-sm-flex align-items-center justify-content-between my-4">
-                <h1 className="h3 mb-0 text-gray-800">Users</h1>
-            </div>
+    }, [users.all])
 
-            <Row>
-                <Col xl={12} md={12} className="mb-4">
-                    <Card className="shadow h-100 py-2">
-                        <Card.Header>
-                        <Button variant="outline-primary" className="btn-sm rounded-0">Add Data</Button>
-                        </Card.Header>
-                        <Card.Body>
-                            <Table striped hover responsive width="100%" cellSpacing="0" cellPadding="0">
-                                <thead>
-                                    <th className="text-nowrap">NO.</th>
-                                    <th className="text-nowrap">Fullname</th>
-                                    <th className="text-nowrap">Username</th>
-                                    <th className="text-nowrap">Email</th>
-                                    <th className="text-nowrap">Action</th>
-                                </thead>
-                                <tbody>
-                                    {loading && <tr>
-                                        <td colSpan="5" className="text-center">
-                                            <Spinner animation="border" size="sm" className="mr-1" />
-                                            Loading data...
-                                        </td>
-                                    </tr>}
-                                    {!loading && users.result?.data && !isEmptyValue(users.result.data) &&
-                                        users.result.data.map((row, i) => (
-                                            <tr key={row.id}>
-                                                <td className="text-nowrap">{users.result.paging.index[i]}</td>
-                                                <td className="text-nowrap">{row.fullname}</td>
-                                                <td className="text-nowrap">{row.username}</td>
-                                                <td className="text-nowrap">{row.email}</td>
-                                                <td className="text-nowrap text-center">
-                                                    <Button size="sm" className="mx-1" title="Detail Data">
-                                                        <i className="fas fa-edit fa-fw"></i>
-                                                    </Button>
+    useEffect(() => {
+        if (!users.remove.loading && users.remove.success === true) {
+            setAlert({
+                ...alert,
+                type: 'success',
+                message: 'Delete data success.',
+                show: true
+            })
+            setLoading(true)  
+        }
+
+        if (!users.remove.loading && users.remove.success === false) {
+            setAlert({
+                ...alert,
+                type: 'error',
+                message: 'Failed to delete data.',
+                show: true
+            })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [users.remove])
+
+    useEffect(() => {
+        const param = {
+            order: 'name',
+            is_active: 1
+        }
+        dispatch(userLevelsActions.getAll({ param }))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    useEffect(() => {
+        const fetchData = () => {
+            let mapData = userLevels.all.data.map((row) => {
+                return { value: row.id, label: row.name }
+            })
+
+            setOptUserLevel([
+                ...optUserLevel,
+                ...mapData
+            ])
+        }
+        if (userLevels.all.success && userLevels.all?.total > 0) fetchData()
+
+        return () => setOptUserLevel([{
+            value: '',
+            label: 'Choose...'
+        }])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userLevels.all.loading])
+
+    return (
+        <>
+            <Container fluid>
+                <div className="d-sm-flex align-items-center justify-content-between my-4">
+                    <h1 className="h3 mb-0 text-gray-800">Products</h1>
+                </div>
+                <div>
+                    {!!alert && <Alert
+                        type={alert.type}
+                        message={alert.message}
+                        show={alert.show}
+                        hide={() => setAlert(false)}
+                    />}
+                </div>
+
+                <Row>
+                    <Col xl={12} md={12} className="mb-4">
+                        <Card className="shadow h-100 py-2">
+                            <Card.Header>
+                            <i className="fas fa-table mr-1"></i> Filter Data
+                            </Card.Header>
+                            <Card.Body>
+                                <Form onSubmit={onSubmitFilter} autoComplete="off">
+                                    <Form.Row>
+                                        <Form.Group className="col-md-2" controlId="name">
+                                            <Form.Label>Name</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                size="sm"
+                                                value={filter.name}
+                                                onChange={e => onChangeFilter('name', e.target.value)}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="col-md-2" controlId="category">
+                                            <Form.Label>User Level</Form.Label>
+                                            <Selectbox
+                                                option={optUserLevel}
+                                                changeValue={(value) => onChangeFilter('user_level_id', value)}
+                                                setValue={filter.user_level_id}
+                                                isSmall={true}
+                                            />
+                                        </Form.Group>
+                                    </Form.Row>
+                                    <Form.Row>
+                                        <Form.Group className="col-md-12 mb-0">
+                                            <Button type="submit" variant="dark" size="sm" className="rounded-0">Search</Button>
+                                        </Form.Group>
+                                    </Form.Row>
+                                </Form>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+
+                    <Col xl={12} md={12} className="mb-4">
+                        <Card className="shadow h-100 py-2">
+                            <Card.Header className="bg-white">
+                                <Button variant="outline-dark" size="sm" className="rounded-0" onClick={() => handleModal('add')}>
+                                    Add Data
+                                </Button>
+                            </Card.Header>
+                            <Card.Body>
+                                <Table striped hover responsive width="100%" cellSpacing="0" cellPadding="0">
+                                    <thead className="bg-dark text-white">
+                                        <tr>
+                                            <th className="text-nowrap">No.</th>
+                                            <th className="text-nowrap">Fullname</th>
+                                            <th className="text-nowrap">Username</th>
+                                            <th className="text-nowrap">User Level</th>
+                                            <th className="text-nowrap">Email</th>
+                                            <th className="text-nowrap">Active</th>
+                                            <th className="text-nowrap">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {loading && <tr>
+                                            <td colSpan="7" className="text-center">
+                                                <Spinner animation="border" size="sm" className="mr-1" />
+                                                Loading data...
+                                            </td>
+                                        </tr>}
+                                        {!loading && (!users.all.success || isEmptyValue(users.all?.total)) &&
+                                            <tr>
+                                                <td colSpan="7" className="text-center">
+                                                    <span className="text-danger">No data found</span>
                                                 </td>
                                             </tr>
-                                        ))
-                                    }
-                                </tbody>
-                            </Table>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                                        }
+                                        {!loading && users.all.success && users.all?.total > 0 &&
+                                            users.all.data.map((row, i) => (
+                                                <tr key={row.id}>
+                                                    <td className="text-nowrap">{users.all.paging?.index[i]}</td>
+                                                    <td className="text-nowrap">{row.fullname}</td>
+                                                    <td className="text-nowrap">{row.username}</td>
+                                                    <td className="text-nowrap">{row.user_level_id}</td>
+                                                    <td className="text-nowrap">{row.email}</td>
+                                                    <td className="text-nowrap">{row.is_active === 1 ? <Badge variant="primary">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</td>
+                                                    <td className="text-nowrap text-center">
+                                                        <Button variant="warning" size="sm" className="rounded-0 mx-1" title="Detail Data" onClick={() => handleModal('detail', row.id)}>
+                                                            <i className="fas fa-edit fa-fw"></i>
+                                                        </Button>
+                                                        <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Delete Data" onClick={() => handleDelete(row.id)}>
+                                                            <i className="fas fa-trash-alt fa-fw"></i>
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        }
+                                    </tbody>
+                                </Table>
 
-            <Row>
-                <Col xl={3} md={6} className="mb-4">
-                    <Card className="shadow h-100 py-2">
-                        <Card.Body>
-                            <Row className="no-gutters align-items-center">
-                                <Col className="mr-2">
-                                    <div className="h6 font-weight-bold text-primary text-uppercase mb-1">
-                                        Earnings (Monthly)
-                                    </div>
-                                    <div className="h5 font-weight-bold text-black-50 mb-0">$40,000</div>
-                                </Col>
-                                <Col className="col-auto">
-                                    <i className="fas fa-calendar fa-2x text-black-50"></i>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col xl={3} md={6} className="mb-4">
-                    <Card className="shadow h-100 py-2">
-                        <Card.Body>
-                            <Row className="no-gutters align-items-center">
-                                <Col className="mr-2">
-                                    <div className="h6 font-weight-bold text-success text-uppercase mb-1">
-                                        Earnings (Annual)
-                                    </div>
-                                    <div className="h5 font-weight-bold text-black-50 mb-0">$40,000</div>
-                                </Col>
-                                <Col className="col-auto">
-                                    <i className="fas fa-dollar-sign fa-2x text-black-50"></i>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col xl={3} md={6} className="mb-4">
-                    <Card className="shadow h-100 py-2">
-                        <Card.Body>
-                            <Row className="no-gutters align-items-center">
-                                <Col className="mr-2">
-                                    <div className="h6 font-weight-bold text-info text-uppercase mb-1">
-                                        Tasks
-                                    </div>
-                                    <Row className="no-gutters align-items-center">
-                                        <Col className="col-auto">
-                                            <div className="h5 mb-0 mr-3 font-weight-bold text-black-50">50%</div>
-                                        </Col>
-                                        <Col>
-                                            <ProgressBar striped variant="secondary" now={50} min={0} max={100} style={{width: '90%'}} />
-                                        </Col>
-                                    </Row>
-                                </Col>
-                                <Col className="col-auto">
-                                    <i className="fas fa-clipboard-list fa-2x text-black-50"></i>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col xl={3} md={6} className="mb-4">
-                    <Card className="shadow h-100 py-2">
-                        <Card.Body>
-                            <Row className="no-gutters align-items-center">
-                                <Col className="mr-2">
-                                    <div className="h6 font-weight-bold text-warning text-uppercase mb-1">
-                                        Pending Requests
-                                    </div>
-                                    <div className="h5 font-weight-bold text-black-50 mb-0">18</div>
-                                </Col>
-                                <Col className="col-auto">
-                                    <i className="fas fa-comments fa-2x text-black-50"></i>
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                                {!loading && users.all.success && users.all?.paging &&
+                                    <Pagination
+                                        total={users.all.total}
+                                        limit={users.all.limit}
+                                        paging={users.all.paging}
+                                        changePage={(page) => {
+                                            setCurrentFilter({ ...currentFilter, page: page })
+                                            setLoading(true)
+                                        }}
+                                    />
+                                }
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            </Container>
 
-            <Row>
-                <Col xl={8} lg={7}>
-                    <Card className="shadow mb-4">
-                        <Card.Header className="py-3 d-flex flex-row align-items-center justify-content-between">
-                            <h6 className="m-0 font-weight-bold text-primary">Earnings Overview</h6>
-                        </Card.Header>
-                        <Card.Body>
-                            asdasd
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+            {/* {modal.type === 'add' && <Add
+                show={modal.show}
+                close={() => handleModal()}
+                alert={(result) => {
+                    if (result) {
+                        setAlert({ ...alert, ...result })
+                        if (result?.type === 'success') setLoading(true)  
+                    }
+                }}
+            />} */}
+
+            {/* {modal.type === 'detail' && <Detail
+                show={modal.show}
+                close={() => handleModal()}
+                dataId={modal.dataId}
+                alert={(result) => {
+                    if (result) {
+                        setAlert({ ...alert, ...result })
+                        if (result?.type === 'success') setLoading(true)  
+                    }
+                }}
+            />} */}
+        </>
     )
 }

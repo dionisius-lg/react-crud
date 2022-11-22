@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import fetchApi from "./../helpers/fetchApi";
-import { PaginationInfo } from "./../helpers/pagination";
 import { isEmptyValue } from "./../helpers/general";
+import { PaginationInfo } from "./../helpers/pagination";
 import _ from "lodash";
 
 // create slice
@@ -27,15 +27,7 @@ function createInitialState() {
 }
 
 function createExtraActions() {
-    return {
-        getAll: getAll(),
-        getDetail: getDetail(),
-        create: create(),
-        update: update(),
-        remove: remove()
-    }
-
-    function getAll() {
+    const getAll = () => {
         return createAsyncThunk(
             `${name}/getAll`,
             async ({ param }) => {
@@ -56,7 +48,7 @@ function createExtraActions() {
         )
     }
 
-    function getDetail() {
+    const getDetail = () => {
         return createAsyncThunk(
             `${name}/getDetail`,
             async ({ id }) => {
@@ -65,7 +57,7 @@ function createExtraActions() {
         )
     }
 
-    function create() {
+    const create = () => {
         return createAsyncThunk(
             `${name}/create`,
             async ({ data }) => {
@@ -84,7 +76,7 @@ function createExtraActions() {
         )
     }
 
-    function update() {
+    const update = () => {
         return createAsyncThunk(
             `${name}/update`,
             async ({ id, data }) => {
@@ -103,7 +95,7 @@ function createExtraActions() {
         )
     }
 
-    function remove() {
+    const remove = () => {
         return createAsyncThunk(
             `${name}/remove`,
             async ({ id }) => {
@@ -111,18 +103,18 @@ function createExtraActions() {
             }
         )
     }
+
+    return {
+        getAll: getAll(),
+        getDetail: getDetail(),
+        create: create(),
+        update: update(),
+        remove: remove()
+    }
 }
 
 function createExtraReducers() {
-    return {
-        ...getAll(),
-        ...getDetail(),
-        ...create(),
-        ...update(),
-        ...remove()
-    };
-
-    function getAll() {
+    const getAll = () => {
         const { pending, fulfilled, rejected } = extraActions.getAll
 
         return {
@@ -170,7 +162,7 @@ function createExtraReducers() {
         }
     }
 
-    function getDetail() {
+    const getDetail = () => {
         const { pending, fulfilled, rejected } = extraActions.getDetail
 
         return {
@@ -202,7 +194,7 @@ function createExtraReducers() {
         }
     }
 
-    function create() {
+    const create = () => {
         const { pending, fulfilled, rejected } = extraActions.create
 
         return {
@@ -234,7 +226,7 @@ function createExtraReducers() {
         }
     }
 
-    function update() {
+    const update = () => {
         const { pending, fulfilled, rejected } = extraActions.update
 
         return {
@@ -266,7 +258,7 @@ function createExtraReducers() {
         }
     }
 
-    function remove() {
+    const remove = () => {
         const { pending, fulfilled, rejected } = extraActions.remove
 
         return {
@@ -296,5 +288,13 @@ function createExtraReducers() {
                 }
             }
         }
+    }
+
+    return {
+        ...getAll(),
+        ...getDetail(),
+        ...create(),
+        ...update(),
+        ...remove()
     }
 }

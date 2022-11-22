@@ -21,9 +21,8 @@ const reactSwal = withReactContent(Swal.mixin({
 
 export const Products = () => {
     const dispatch = useDispatch()
-    const products = useSelector(x => x.products.all)
-    const productDelete = useSelector(x => x.products.remove)
-    const categories = useSelector(x => x.productCategories.all)
+    const products = useSelector(x => x.products)
+    const productCategories = useSelector(x => x.productCategories)
     const [loading, setLoading] = useState(true)
     const [alert, setAlert] = useState(false)
     const [filter, setFilter] = useState({
@@ -40,7 +39,7 @@ export const Products = () => {
         order: 'name',
         ...filter
     })
-    const [optCategories, setOptCategories] = useState([{
+    const [optProductCategory, setOptProductCategory] = useState([{
         value: '',
         label: 'Choose...'
     }])
@@ -86,9 +85,9 @@ export const Products = () => {
     }, [loading])
 
     useEffect(() => {
-        setLoading(products?.loading || false)
+        setLoading(products.all?.loading || false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [products])
+    }, [products.all])
 
     useEffect(() => {
         const param = {
@@ -101,26 +100,26 @@ export const Products = () => {
 
     useEffect(() => {
         const fetchData = () => {
-            let mapData = categories.data.map((row) => {
+            let mapData = productCategories.all.data.map((row) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptCategories([
-                ...optCategories,
+            setOptProductCategory([
+                ...optProductCategory,
                 ...mapData
             ])
         }
-        if (categories.success && categories?.total > 0) fetchData()
+        if (productCategories.all.success && productCategories.all?.total > 0) fetchData()
 
-        return () => setOptCategories([{
+        return () => setOptProductCategory([{
             value: '',
             label: 'Choose...'
         }])
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categories.loading])
+    }, [productCategories.loading])
 
     useEffect(() => {
-        if (!productDelete.loading && productDelete.success === true) {
+        if (!products.remove.loading && products.remove.success === true) {
             setAlert({
                 ...alert,
                 type: 'success',
@@ -130,7 +129,7 @@ export const Products = () => {
             setLoading(true)  
         }
 
-        if (!productDelete.loading && productDelete.success === false) {
+        if (!products.remove.loading && products.remove.success === false) {
             setAlert({
                 ...alert,
                 type: 'error',
@@ -139,7 +138,7 @@ export const Products = () => {
             })
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productDelete])
+    }, [products.remove])
 
     return (
         <>
@@ -177,7 +176,7 @@ export const Products = () => {
                                         <Form.Group className="col-md-2" controlId="category">
                                             <Form.Label>Category</Form.Label>
                                             <Selectbox
-                                                option={optCategories}
+                                                option={optProductCategory}
                                                 changeValue={(value) => onChangeFilter('product_category_id', value)}
                                                 setValue={filter.product_category_id}
                                                 isSmall={true}
@@ -218,17 +217,17 @@ export const Products = () => {
                                                 Loading data...
                                             </td>
                                         </tr>}
-                                        {!loading && (!products.success || isEmptyValue(products?.total)) &&
+                                        {!loading && (!products.all.success || isEmptyValue(products.all?.total)) &&
                                             <tr>
                                                 <td colSpan="4" className="text-center">
                                                     <span className="text-danger">No data found</span>
                                                 </td>
                                             </tr>
                                         }
-                                        {!loading && products.success && products?.total > 0 &&
-                                            products.data.map((row, i) => (
+                                        {!loading && products.all.success && products.all?.total > 0 &&
+                                            products.all.data.map((row, i) => (
                                                 <tr key={row.id}>
-                                                    <td className="text-nowrap">{products.paging?.index[i]}</td>
+                                                    <td className="text-nowrap">{products.all.paging?.index[i]}</td>
                                                     <td className="text-nowrap">{row.name}</td>
                                                     <td className="text-nowrap">{row.product_category}</td>
                                                     <td className="text-nowrap text-center">
@@ -245,11 +244,11 @@ export const Products = () => {
                                     </tbody>
                                 </Table>
 
-                                {!loading && products.success && products?.paging &&
+                                {!loading && products.all.success && products.all?.paging &&
                                     <Pagination
-                                        total={products.total}
-                                        limit={products.limit}
-                                        paging={products.paging}
+                                        total={products.all.total}
+                                        limit={products.all.limit}
+                                        paging={products.all.paging}
                                         changePage={(page) => {
                                             setCurrentFilter({ ...currentFilter, page: page })
                                             setLoading(true)

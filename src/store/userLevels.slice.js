@@ -5,15 +5,15 @@ import { PaginationInfo } from "./../helpers/pagination";
 import _ from "lodash";
 
 // create slice
-const name = 'users'
+const name = 'user_levels'
 const initialState = createInitialState()
 const extraActions = createExtraActions()
 const extraReducers = createExtraReducers()
 const slice = createSlice({ name, initialState, extraReducers })
 
 // exports
-export const usersActions = { ...slice.actions, ...extraActions }
-export const usersReducer = slice.reducer
+export const userLevelsActions = { ...slice.actions, ...extraActions }
+export const userLevelsReducer = slice.reducer
 
 // implementation
 function createInitialState() {

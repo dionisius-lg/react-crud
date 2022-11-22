@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EncryptStorage } from "encrypt-storage";
 import moment from "moment";
 
 export const isEmptyValue = (value) => {
@@ -58,36 +59,17 @@ export const formatDateTime = (value) => {
     return false
 }
 
-export const useLocalStorage = (key, initialValue) => {
-    const [storedValue, setStoredValue] = useState(() => {
-        try {
-            const item = window.localStorage.getItem(key)
-            return item ? JSON.parse(item) : initialValue
-        } catch (err) {
-            console.log(err)
-            return initialValue
-        }
-    })
+export const encryptStorage = new EncryptStorage(process.env.REACT_APP_SECRET_KEY, {
+    prefix: process.env.REACT_APP_NAME,
+    storageType: 'sessionStorage',
+})
 
-    const setValue = (value) => {
-        try {
-            const valueToStore = value instanceof Function ? value(storedValue) : value
-            setStoredValue(valueToStore)
-            window.localStorage.setItem(key, JSON.stringify(valueToStore))
-        } catch (err) {
-            console.log(err)
-        }
-    }
+export const diffDate = (value1, value2) => {
+    const date1 = moment(value1)
+    const date2 = moment(value2)
 
-    return [storedValue, setValue]
-}
-
-export const diffDate = (new_value, old_value) => {
-    const new_date = moment(new_value)
-    const old_date = moment(old_value)
-
-    if (new_date.isValid() && old_date.isValid()) {
-        return new_date.diff(old_date)
+    if (date1.isValid() && date2.isValid()) {
+        return date1.diff(date2)
     }
 
     return false

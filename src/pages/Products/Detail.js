@@ -9,22 +9,20 @@ import Selectbox from "./../../components/Selectbox";
 import * as yup from "yup";
 
 const Detail = ({ show, close, dataId, alert }) => {
-    const initData = () => {
-        return {
-            name: '',
-            product_category_id: ''
-        }
+    const defaultVal = {
+        name: '',
+        product_category_id: ''
+    }
+    const defaultOpt = {
+        value: '',
+        label: 'Choose...'
     }
 
     const dispatch = useDispatch()
-    const product = useSelector(x => x.products.detail)
-    const productUpdate = useSelector(x => x.products.update)
-    const categories = useSelector(x => x.productCategories.all)
+    const { detail, update } = useSelector(x => x.products)
+    const productCategories = useSelector(x => x.productCategories)
     const [modalShow, setModalShow] = useState(false)
-    const [optCategories, setOptCategories] = useState([{
-        value: '',
-        label: 'Choose...'
-    }])
+    const [optProductCategory, setOptProductCategory] = useState([defaultOpt])
 
     const handleClose = () => {
         setModalShow(false)
@@ -35,7 +33,7 @@ const Detail = ({ show, close, dataId, alert }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Create data success.' : 'Failed to create data.',
+                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -46,7 +44,7 @@ const Detail = ({ show, close, dataId, alert }) => {
     }
 
     const { handleSubmit, formState: {errors, isSubmitting }, register, reset, control, getValues } = useForm({
-        defaultValues: initData(),
+        defaultValues: defaultVal,
         resolver: yupResolver(yup.object().shape({
             name: yup.string()
                 .required("This field is required.")
@@ -83,41 +81,40 @@ const Detail = ({ show, close, dataId, alert }) => {
     useEffect(() => {
         const fetchData = () => {
             return reset({
-                ...initData,
-                name: product.data.name,
-                product_category_id: product.data.product_category_id,
+                ...defaultVal,
+                name: detail.data.name,
+                product_category_id: detail.data.product_category_id,
             }, {keepErrors: false})
         }
 
-        if (!product.loading && product?.total > 0) fetchData()
+        if (!detail.loading && detail?.total > 0) fetchData()
+        return () => reset(defaultVal, {keepErrors: false})
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [product])
+    }, [detail])
 
     useEffect(() => {
-        if (!productUpdate.loading && productUpdate.success === true) handleAlert('success')
-        if (!productUpdate.loading && productUpdate.success === false) handleAlert('error')
+        if (!update.loading && update.success === true) handleAlert('success')
+        if (!update.loading && update.success === false) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productUpdate])
+    }, [update])
 
     useEffect(() => {
         const fetchData = () => {
-            let mapData = categories.data.map((row) => {
+            let mapData = productCategories.all.data.map((row) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptCategories([
-                ...optCategories,
+            setOptProductCategory([
+                ...optProductCategory,
                 ...mapData
             ])
         }
-        if (categories?.total > 0) fetchData()
 
-        return () => setOptCategories([{
-            value: '',
-            label: 'Choose...'
-        }])
+        if (productCategories.all.success && productCategories.all?.total > 0) fetchData()
+
+        return () => setOptProductCategory([defaultOpt])
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categories.loading])
+    }, [productCategories.all.loading])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">
@@ -144,7 +141,7 @@ const Detail = ({ show, close, dataId, alert }) => {
                             render={({ field: { onChange } }) => {
                                 return (
                                     <Selectbox
-                                        option={optCategories}
+                                        option={optProductCategory}
                                         changeValue={(value) => onChange(value)}
                                         setValue={getValues('product_category_id')}
                                         isSmall={true}

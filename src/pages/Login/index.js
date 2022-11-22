@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { Container, Row, Col, Form, Button, Spinner, InputGroup, Card } from "react-bootstrap";
-
+import { Row, Col, Form, Button, Spinner, InputGroup, Card } from "react-bootstrap";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -9,19 +8,21 @@ import Alert from "./../../components/Alert";
 import history from "./../../helpers/history";
 import{ authActions } from "./../../store"
 
-// import ImageLogin from "./../../assets/img/login.jpg";
-
 export const Login = () => {
     const dispatch = useDispatch()
-    const { user, error } = useSelector(x => x.auth)
+    const { user, error, loading } = useSelector(x => x.auth)
     const [alert, setAlert] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
 
     useEffect(() => {
-        // redirect to home if already logged in
-        if (user) history.navigate('/')
+        if (user && !loading) history.navigate('/')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    useEffect(() => {
+        if (user && loading) dispatch(authActions.user({ id: user?.id }))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, loading])
 
     useEffect(() => {
         if (error) setAlert({ type: 'error', message: error.message, show: true })

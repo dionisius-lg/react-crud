@@ -1,13 +1,14 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import history from "../helpers/history";
-import fetchApi from "../helpers/fetchApi";
+import fetchApi from "./../helpers/fetchApi";
+import history from "./../helpers/history";
+import { isEmptyValue, encryptStorage } from "./../helpers/general";
 
 // create slice
 const name = 'auth'
 const initialState = createInitialState()
-const reducers = createReducers()
 const extraActions = createExtraActions()
 const extraReducers = createExtraReducers()
+const reducers = createReducers()
 const slice = createSlice({ name, initialState, reducers, extraReducers })
 
 // exports
@@ -17,49 +18,83 @@ export const authReducer = slice.reducer
 // implementation
 function createInitialState() {
     return {
-        // initialize state from local storage to enable user to stay logged in
-        user: JSON.parse(localStorage.getItem('user')),
-        error: null
+        user: encryptStorage.getItem('user'),
+        error: null,
+        loading: false
     }
 }
 
 function createReducers() {
     return {
-        logout
+        logout,
+        relogin
     }
 
     function logout(state) {
-        state.user = null;
-        localStorage.removeItem('user');
-        history.navigate('/');
+        state.user = null
+        encryptStorage.removeItem('user')
+        history.navigate('/')
+    }
+
+    function relogin(state, action) {
+        const { data } = action.payload
+        const user = {
+            ...state.user,
+            ...data
+        }
+
+        state.user = user
     }
 }
 
 function createExtraActions() {
-    const endpoint = '/token'
-
-    return {
-        login: login()
-    };
-
-    function login() {
-        
+    const login = () => {
         return createAsyncThunk(
             `${name}/login`,
-            async (data) => {
-                return await fetchApi.post(endpoint, data)
+            async ({ username, password }) => {
+                return await fetchApi.post('/token', { username, password })
             }
         )
+    }
+
+    const user = () => {
+        return createAsyncThunk(
+            `${name}/user`,
+            async ({ id }) => {
+                return await fetchApi.get(`/users/${id}`)
+            }
+        )
+    }
+
+    return {
+        login: login(),
+        user: user()
     }
 }
 
 function createExtraReducers() {
-    return {
-        ...login()
-    };
+    const login = () => {
+        const { pending, fulfilled, rejected } = extraActions.login
 
-    function login() {
-        var { pending, fulfilled, rejected } = extraActions.login
+        return {
+            [pending]: (state) => {
+                state.error = null
+                state.loading = true
+            },
+            [fulfilled]: (state, action) => {
+                const { data } = action.payload
+
+                state.user = data
+            },
+            [rejected]: (state, action) => {
+                state.error = { message: 'Unauthorized' }
+                state.loading = false
+            }
+        }
+    }
+
+    const user = () => {
+        const { pending, fulfilled, rejected } = extraActions.user
 
         return {
             [pending]: (state) => {
@@ -68,17 +103,27 @@ function createExtraReducers() {
             [fulfilled]: (state, action) => {
                 const { data } = action.payload
 
-                // store user details and jwt token in local storage to keep user logged in between page refreshes
-                localStorage.setItem('user', JSON.stringify(data))
-                state.user = data
+                const user = {
+                    ...state.user,
+                    ...data
+                }
 
-                // get return url from location state or default to home page
-                const { from } = history.location.state || { from: { pathname: '/' } }
+                encryptStorage.setItem('user', user)
+                state.user = user
+                state.loading = false
+
+                const { from } = history.location.state || { from: history.location }
                 history.navigate(from)
             },
             [rejected]: (state, action) => {
-                state.error = action.error
+                state.error = { message: 'Unauthorized' }
+                state.loading = false
             }
-        };
+        }
+    }
+
+    return {
+        ...login(),
+        ...user()
     }
 }

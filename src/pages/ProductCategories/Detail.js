@@ -8,16 +8,12 @@ import { isEmptyValue } from "./../../helpers/general";
 import * as yup from "yup";
 
 const Detail = ({ show, close, dataId, alert }) => {
-    const initData = () => {
-        return {
-            name: '',
-            product_category_id: ''
-        }
+    const defaultVal = {
+        name: ''
     }
 
     const dispatch = useDispatch()
-    const productCategory = useSelector(x => x.productCategories.detail)
-    const productCategoryUpdate = useSelector(x => x.productCategories.update)
+    const { update, detail } = useSelector(x => x.productCategories)
     const [modalShow, setModalShow] = useState(false)
 
     const handleClose = () => {
@@ -29,7 +25,7 @@ const Detail = ({ show, close, dataId, alert }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Create data success.' : 'Failed to create data.',
+                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -40,7 +36,7 @@ const Detail = ({ show, close, dataId, alert }) => {
     }
 
     const { handleSubmit, formState: {errors, isSubmitting }, register, reset } = useForm({
-        defaultValues: initData(),
+        defaultValues: defaultVal,
         resolver: yupResolver(yup.object().shape({
             name: yup.string()
                 .required("This field is required.")
@@ -75,20 +71,20 @@ const Detail = ({ show, close, dataId, alert }) => {
     useEffect(() => {
         const fetchData = () => {
             return reset({
-                ...initData,
-                name: productCategory.data.name,
+                ...defaultVal,
+                name: detail.data.name,
             }, {keepErrors: false})
         }
 
-        if (!productCategory.loading && productCategory?.total > 0) fetchData()
+        if (!detail.loading && detail?.total > 0) fetchData()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategory])
+    }, [detail])
 
     useEffect(() => {
-        if (!productCategoryUpdate.loading && productCategoryUpdate.success === true) handleAlert('success')
-        if (!productCategoryUpdate.loading && productCategoryUpdate.success === false) handleAlert('error')
+        if (!update.loading && update.success === true) handleAlert('success')
+        if (!update.loading && update.success === false) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategoryUpdate])
+    }, [update])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">
