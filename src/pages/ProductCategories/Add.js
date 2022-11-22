@@ -6,7 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { productCategoriesActions } from "./../../store";
 import * as yup from "yup";
 
-const Add = ({ show, close, alert }) => {
+const Add = ({ show = false, close, alert }) => {
     const defaultVal = {
         name: ''
     }
@@ -60,14 +60,14 @@ const Add = ({ show, close, alert }) => {
     }, [show])
 
     useEffect(() => {
-        if (!create.loading && create.success === true) handleAlert('success')
-        if (!create.loading && create.success === false) handleAlert('error')
+        if (!create.loading && create?.result) handleAlert('success')
+        if (!create.loading && create?.error) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [create])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">
-            <Modal.Header closeButton>
+            <Modal.Header closeButton={isSubmitting ? false : true}>
                 <Modal.Title as="h5">Add New Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>

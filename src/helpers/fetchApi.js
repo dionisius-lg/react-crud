@@ -75,16 +75,18 @@ const refreshToken = async ({ method, endpoint, attempt }) => {
 }
 
 const handleError = (error) => {
-    if (error.response) {
+    if (error?.response) {
         return error.response
     }
 
-    return {
+    const data = {
         request_time: new Date().getTime(),
         response_code: 503,
         success: false,
         message: 'Service Unavailable'
     }
+
+    return { data }
 }
 
 const handleResponse = (response) => {

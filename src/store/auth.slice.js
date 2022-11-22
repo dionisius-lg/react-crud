@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import fetchApi from "./../helpers/fetchApi";
+import { encryptStorage } from "./../helpers/general";
 import history from "./../helpers/history";
-import { isEmptyValue, encryptStorage } from "./../helpers/general";
 
 // create slice
 const name = 'auth'

@@ -7,13 +7,13 @@ import { productCategoriesActions } from "./../../store";
 import { isEmptyValue } from "./../../helpers/general";
 import * as yup from "yup";
 
-const Detail = ({ show, close, dataId, alert }) => {
+const Detail = ({ show = false, close, alert, id }) => {
     const defaultVal = {
         name: ''
     }
 
     const dispatch = useDispatch()
-    const { update, detail } = useSelector(x => x.productCategories)
+    const { detail, update } = useSelector(x => x.productCategories)
     const [modalShow, setModalShow] = useState(false)
 
     const handleClose = () => {
@@ -53,42 +53,39 @@ const Detail = ({ show, close, dataId, alert }) => {
         //     }
         // })
 
-        await dispatch(productCategoriesActions.update({ id: dataId, data }))
+        await dispatch(productCategoriesActions.update({ id, data }))
 
         return handleClose()
     }
 
     useEffect(() => {
-        if (show !== false) setModalShow(true)
+        if (!isEmptyValue(id)) dispatch(productCategoriesActions.getDetail({ id }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [show])
-
-    useEffect(() => {
-        if (!isEmptyValue(dataId)) dispatch(productCategoriesActions.getDetail({ id: dataId }))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataId])
+    }, [id])
 
     useEffect(() => {
         const fetchData = () => {
+            setModalShow(true)
             return reset({
                 ...defaultVal,
-                name: detail.data.name,
+                name: detail.result.data.name,
             }, {keepErrors: false})
         }
 
-        if (!detail.loading && detail?.total > 0) fetchData()
+        if (show && !detail.loading && detail?.result) fetchData()
+        return () => setModalShow(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail])
+    }, [show, detail])
 
     useEffect(() => {
-        if (!update.loading && update.success === true) handleAlert('success')
-        if (!update.loading && update.success === false) handleAlert('error')
+        if (!update.loading && update?.result) handleAlert('success')
+        if (!update.loading && update?.error) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [update])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">
-            <Modal.Header closeButton>
+            <Modal.Header closeButton={isSubmitting ? false : true}>
                 <Modal.Title as="h5">Detail Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>

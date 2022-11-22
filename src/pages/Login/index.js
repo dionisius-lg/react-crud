@@ -6,7 +6,7 @@ import * as yup from "yup";
 import { useSelector, useDispatch } from "react-redux";
 import Alert from "./../../components/Alert";
 import history from "./../../helpers/history";
-import{ authActions } from "./../../store"
+import { authActions } from "./../../store";
 
 export const Login = () => {
     const dispatch = useDispatch()

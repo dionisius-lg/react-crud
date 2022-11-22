@@ -4,24 +4,21 @@ import { Modal, Form, Button, Spinner } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productsActions } from "./../../store";
+import { defaultOpt } from "./../../helpers/general";
 import Selectbox from "./../../components/Selectbox";
 import * as yup from "yup";
 
-const Add = ({ show, close, alert }) => {
+const Add = ({ show = false, close, alert }) => {
     const defaultVal = {
         name: '',
         product_category_id: ''
     }
-    const defaultOpt = {
-        value: '',
-        label: 'Choose...'
-    }
 
     const dispatch = useDispatch()
     const { create } = useSelector(x => x.products)
-    const productCategories = useSelector(x => x.productCategories)
+    const categories = useSelector(x => x.productCategories.all)
     const [modalShow, setModalShow] = useState(false)
-    const [optProductCategory, setOptProductCategory] = useState([defaultOpt])
+    const [optCategory, setOptCategory] = useState(defaultOpt)
 
     const handleClose = () => {
         setModalShow(false)
@@ -70,32 +67,32 @@ const Add = ({ show, close, alert }) => {
     }, [show])
 
     useEffect(() => {
-        if (!create.loading && create.success === true) handleAlert('success')
-        if (!create.loading && create.success === false) handleAlert('error')
+        if (!create.loading && create?.result) handleAlert('success')
+        if (!create.loading && create?.error) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [create])
 
     useEffect(() => {
         const fetchData = () => {
-            let mapData = productCategories.all.data.map((row) => {
+            console.log(categories.result.data)
+            let mapData = categories.result.data.map((row) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptProductCategory([
-                ...optProductCategory,
+            setOptCategory([
+                ...defaultOpt,
                 ...mapData
             ])
         }
+        if (!categories.loading && categories?.result?.total > 0) fetchData()
 
-        if (productCategories.all.success && productCategories.all?.total > 0) fetchData()
-
-        return () => setOptProductCategory([defaultOpt])
+        return () => setOptCategory(defaultOpt)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategories.all.loading])
+    }, [categories])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">
-            <Modal.Header closeButton>
+            <Modal.Header closeButton={isSubmitting ? false : true}>
                 <Modal.Title as="h5">Add New Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>
@@ -118,7 +115,7 @@ const Add = ({ show, close, alert }) => {
                             render={({ field: { onChange } }) => {
                                 return (
                                     <Selectbox
-                                        option={optProductCategory}
+                                        option={optCategory}
                                         changeValue={(value) => onChange(value)}
                                         setValue={getValues('product_category_id')}
                                         isSmall={true}

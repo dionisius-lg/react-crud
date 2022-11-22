@@ -1,109 +1,98 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Container, Row, Col, Card, Button, Table, Spinner, Form } from "react-bootstrap";
-import Swal from "sweetalert2";
-import withReactContent from "sweetalert2-react-content";
 import { productCategoriesActions } from "./../../store";
-import { isEmptyValue } from "../../helpers/general";
+import { reactSwal } from "./../../helpers/general";
 import Pagination from "./../../components/Pagination";
 import Alert from "./../../components/Alert";
 import Add from "./Add";
 import Detail from "./Detail";
 
-const reactSwal = withReactContent(Swal.mixin({
-    customClass: {
-        confirmButton: 'btn btn-primary rounded-0 mr-2',
-        cancelButton: 'btn btn-default rounded-0'
-    },
-    buttonsStyling: false
-}))
-
 export const ProductCategories = () => {
     const dispatch = useDispatch()
-    const productCategories = useSelector(x => x.productCategories.all)
-    const productCategoryDelete = useSelector(x => x.productCategories.remove)
+    const { all, remove } = useSelector(x => x.productCategories)
     const [loading, setLoading] = useState(true)
     const [alert, setAlert] = useState(false)
-    const [filter, setFilter] = useState({
-        name: ''
-    })
-    const [modal, setModal] = useState({
-        type: null,
-        show: false,
-        dataId: 0
-    })
-    const [currentFilter, setCurrentFilter] = useState({
+    const [param, setParam] = useState({
         page: 1,
         order: 'name',
-        ...filter
+        name: ''
+    })
+    const [action, setAction] = useState({
+        type: null,
+        dataId: 0
     })
 
     const onChangeFilter = (key, val) => {
-        setFilter({ ...filter, [key]: val })
+        setParam({ ...param, [key]: val })
     }
 
     const onSubmitFilter = (e) => {
         e.preventDefault()
-        setCurrentFilter({ ...currentFilter, ...filter, page: 1 })
+        setParam({ ...param, page: 1 })
         setLoading(true)
     }
 
-    const handleModal = (type, id) => {
-        setModal({
-            ...modal,
+    const handleAction = (type, id) => {
+        setAction({
+            ...action,
             type: type || null,
-            show: !modal.show,
             dataId: id || 0
         })
     }
 
-    const handleDelete = (id = 0) => {
-        if (!isEmptyValue(id)) {
-            reactSwal.fire({
-                title: 'Delete this data?',
-                text: 'This action cannot be undone.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Confirm'
-            }).then((action) => {
-                if (action.isConfirmed) {
-                    dispatch(productCategoriesActions.remove({ id: id }))
-                }
-            })
-        }
-    }
-
     useEffect(() => {
-        if (loading === true) dispatch(productCategoriesActions.getAll({ param: currentFilter }))
+        if (loading === true) dispatch(productCategoriesActions.getAll({ param }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading])
 
     useEffect(() => {
-        setLoading(productCategories?.loading || false)
+        setLoading(all?.loading || false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategories])
+    }, [all])
 
     useEffect(() => {
-        if (!productCategoryDelete.loading && productCategoryDelete.success === true) {
-            setAlert({
-                ...alert,
-                type: 'success',
-                message: 'Delete data success.',
-                show: true
-            })
-            setLoading(true)  
-        }
-
-        if (!productCategoryDelete.loading && productCategoryDelete.success === false) {
+        if (!remove.loading && remove?.error) {
             setAlert({
                 ...alert,
                 type: 'error',
-                message: 'Failed to delete data.',
+                message: 'Failed to remove data.',
                 show: true
             })
         }
+
+        if (!remove.loading && remove?.result) {
+            setAlert({
+                ...alert,
+                type: 'success',
+                message: 'Remove data success.',
+                show: true
+            })
+            setLoading(true)
+        }
+
+        return () => dispatch(productCategoriesActions.clearState())
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategoryDelete])
+    }, [remove])
+
+    useEffect(() => {
+        const removeData = () => {
+            reactSwal.fire({
+                title: 'Remove this data?',
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    dispatch(productCategoriesActions.remove({ id: action.dataId }))
+                }
+            })
+        }
+
+        if (action.type === 'remove') removeData()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [action])
 
     return (
         <>
@@ -134,7 +123,7 @@ export const ProductCategories = () => {
                                             <Form.Control
                                                 type="text"
                                                 size="sm"
-                                                value={filter.name}
+                                                value={param.name}
                                                 onChange={e => onChangeFilter('name', e.target.value)}
                                             />
                                         </Form.Group>
@@ -152,7 +141,7 @@ export const ProductCategories = () => {
                     <Col xl={12} md={12} className="mb-4">
                         <Card className="shadow h-100 py-2">
                             <Card.Header>
-                                <Button variant="outline-dark" size="sm" className="rounded-0" onClick={() => handleModal('add')}>
+                                <Button variant="outline-dark" size="sm" className="rounded-0" onClick={() => handleAction('add')}>
                                     Add Data
                                 </Button>
                             </Card.Header>
@@ -172,23 +161,23 @@ export const ProductCategories = () => {
                                                 Loading data...
                                             </td>
                                         </tr>}
-                                        {!loading && (!productCategories.success || isEmptyValue(productCategories?.total)) &&
+                                        {!loading && (all?.error || all?.result?.total === 0) &&
                                             <tr>
                                                 <td colSpan="3" className="text-center">
                                                     <span className="text-danger">No data found</span>
                                                 </td>
                                             </tr>
                                         }
-                                        {!loading && productCategories.success && productCategories?.total > 0 &&
-                                            productCategories.data.map((row, i) => (
+                                        {!loading && all?.result &&
+                                            all.result.data.map((row, i) => (
                                                 <tr key={row.id}>
-                                                    <td className="text-nowrap">{productCategories.paging?.index[i]}</td>
+                                                    <td className="text-nowrap">{all.result.paging.index[i]}</td>
                                                     <td className="text-nowrap">{row.name}</td>
                                                     <td className="text-nowrap text-center">
-                                                        <Button variant="warning" size="sm" className="rounded-0 mx-1" title="Detail Data" onClick={() => handleModal('detail', row.id)}>
+                                                        <Button variant="warning" size="sm" className="rounded-0 mx-1" title="Detail Data" onClick={() => handleAction('detail', row.id)}>
                                                             <i className="fas fa-edit fa-fw"></i>
                                                         </Button>
-                                                        <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Delete Data" onClick={() => handleDelete(row.id)}>
+                                                        <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Remove Data" onClick={() => handleAction('remove', row.id)}>
                                                             <i className="fas fa-trash-alt fa-fw"></i>
                                                         </Button>
                                                     </td>
@@ -198,13 +187,13 @@ export const ProductCategories = () => {
                                     </tbody>
                                 </Table>
 
-                                {!loading && productCategories.success && productCategories?.paging &&
+                                {!loading && all?.result?.paging &&
                                     <Pagination
-                                        total={productCategories.total}
-                                        limit={productCategories.limit}
-                                        paging={productCategories.paging}
-                                        changePage={(page) => {
-                                            setCurrentFilter({ ...currentFilter, page: page })
+                                        total={all.result.total}
+                                        limit={all.result.limit}
+                                        paging={all.result.paging}
+                                        changePage={(num) => {
+                                            setParam({ ...param, page: num })
                                             setLoading(true)
                                         }}
                                     />
@@ -215,27 +204,29 @@ export const ProductCategories = () => {
                 </Row>
             </Container>
 
-            {modal.type === 'add' && <Add
-                show={modal.show}
-                close={() => handleModal()}
+            {action.type === 'add' && <Add
+                show={true}
+                close={() => handleAction()}
                 alert={(result) => {
                     if (result) {
                         setAlert({ ...alert, ...result })
                         if (result?.type === 'success') setLoading(true)  
                     }
+                    dispatch(productCategoriesActions.clearState())
                 }}
             />}
 
-            {modal.type === 'detail' && <Detail
-                show={modal.show}
-                close={() => handleModal()}
-                dataId={modal.dataId}
+            {action.type === 'detail' && <Detail
+                show={true}
+                close={() => handleAction()}
                 alert={(result) => {
                     if (result) {
                         setAlert({ ...alert, ...result })
                         if (result?.type === 'success') setLoading(true)  
                     }
+                    dispatch(productCategoriesActions.clearState())
                 }}
+                id={action.dataId}
             />}
         </>
     )

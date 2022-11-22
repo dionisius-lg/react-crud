@@ -4,143 +4,128 @@ import { Container, Row, Col, Card, Button, Table, Spinner, Form, Badge } from "
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { usersActions, userLevelsActions } from "./../../store";
-import { isEmptyValue } from "../../helpers/general";
+import { reactSwal, defaultOpt } from "./../../helpers/general";
 import Pagination from "./../../components/Pagination";
 import Alert from "./../../components/Alert";
 import Selectbox from "./../../components/Selectbox";
 // import Add from "./Add";
-// import Detail from "./Detail";
-
-const reactSwal = withReactContent(Swal.mixin({
-    customClass: {
-        confirmButton: 'btn btn-primary rounded-0 mr-2',
-        cancelButton: 'btn btn-default rounded-0'
-    },
-    buttonsStyling: false
-}))
+import Detail from "./Detail";
 
 export const Users = () => {
     const dispatch = useDispatch()
-    const users = useSelector(x => x.users)
-    const userLevels = useSelector(x => x.userLevels)
+    const { all, remove } = useSelector(x => x.users)
+    const levels = useSelector(x => x.userLevels.all)
     const [loading, setLoading] = useState(true)
     const [alert, setAlert] = useState(false)
-    const [filter, setFilter] = useState({
+    const [param, setParam] = useState({
+        page: 1,
+        order: 'fullname',
         fullname: '',
         username: '',
         user_level_id: '',
-        email: ''
+        email: '',
     })
-    const [modal, setModal] = useState({
+    const [action, setAction] = useState({
         type: null,
-        show: false,
         dataId: 0
     })
-    const [currentFilter, setCurrentFilter] = useState({
-        page: 1,
-        order: 'name',
-        ...filter
-    })
-    const [optUserLevel, setOptUserLevel] = useState([{
-        value: '',
-        label: 'Choose...'
-    }])
+    const [optLevel, setOptLevel] = useState(defaultOpt)
 
     const onChangeFilter = (key, val) => {
-        setFilter({ ...filter, [key]: val })
+        setParam({ ...param, [key]: val })
     }
 
     const onSubmitFilter = (e) => {
         e.preventDefault()
-        setCurrentFilter({ ...currentFilter, ...filter, page: 1 })
+        setParam({ ...param, page: 1 })
         setLoading(true)
     }
 
-    const handleModal = (type, id) => {
-        setModal({
-            ...modal,
+    const handleAction = (type, id) => {
+        setAction({
+            ...action,
             type: type || null,
-            show: !modal.show,
             dataId: id || 0
         })
     }
 
-    const handleDelete = (id = 0) => {
-        if (!isEmptyValue(id)) {
-            reactSwal.fire({
-                title: 'Delete this data?',
-                text: 'This action cannot be undone.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Confirm'
-            }).then((action) => {
-                if (action.isConfirmed) {
-                    dispatch(usersActions.remove({ id: id }))
-                }
-            })
-        }
-    }
-
     useEffect(() => {
-        if (loading === true) dispatch(usersActions.getAll({ param: currentFilter }))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loading])
-
-    useEffect(() => {
-        setLoading(users.all?.loading || false)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [users.all])
-
-    useEffect(() => {
-        if (!users.remove.loading && users.remove.success === true) {
-            setAlert({
-                ...alert,
-                type: 'success',
-                message: 'Delete data success.',
-                show: true
-            })
-            setLoading(true)  
-        }
-
-        if (!users.remove.loading && users.remove.success === false) {
-            setAlert({
-                ...alert,
-                type: 'error',
-                message: 'Failed to delete data.',
-                show: true
-            })
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [users.remove])
-
-    useEffect(() => {
-        const param = {
+        dispatch(userLevelsActions.getAll({
             order: 'name',
             is_active: 1
-        }
-        dispatch(userLevelsActions.getAll({ param }))
+        }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
+        if (loading === true) dispatch(usersActions.getAll({ param }))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading])
+
+    useEffect(() => {
+        setLoading(all?.loading || false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [all])
+
+    useEffect(() => {
         const fetchData = () => {
-            let mapData = userLevels.all.data.map((row) => {
+            let mapData = levels.result.data.map((row) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptUserLevel([
-                ...optUserLevel,
+            setOptLevel([
+                ...defaultOpt,
                 ...mapData
             ])
         }
-        if (userLevels.all.success && userLevels.all?.total > 0) fetchData()
+        if (!levels.loading && levels?.result?.total > 0) fetchData()
 
-        return () => setOptUserLevel([{
-            value: '',
-            label: 'Choose...'
-        }])
+        return () => setOptLevel(defaultOpt)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userLevels.all.loading])
+    }, [levels])
+
+    useEffect(() => {
+        if (!remove.loading && remove?.error) {
+            setAlert({
+                ...alert,
+                type: 'error',
+                message: 'Failed to remove data.',
+                show: true
+            })
+        }
+
+        if (!remove.loading && remove?.result) {
+            setAlert({
+                ...alert,
+                type: 'success',
+                message: 'Remove data success.',
+                show: true
+            })
+            setLoading(true)
+        }
+
+        return () => dispatch(usersActions.clearState())
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [remove])
+
+    useEffect(() => {
+        const removeData = () => {
+            reactSwal.fire({
+                title: 'Remove this data?',
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    dispatch(usersActions.remove({ id: action.dataId }))
+                }
+            })
+        }
+
+        if (action.type === 'remove') removeData()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [action])
 
     return (
         <>
@@ -166,22 +151,40 @@ export const Users = () => {
                             <Card.Body>
                                 <Form onSubmit={onSubmitFilter} autoComplete="off">
                                     <Form.Row>
-                                        <Form.Group className="col-md-2" controlId="name">
-                                            <Form.Label>Name</Form.Label>
+                                        <Form.Group className="col-md-2" controlId="fullname">
+                                            <Form.Label>Fullname</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 size="sm"
-                                                value={filter.name}
-                                                onChange={e => onChangeFilter('name', e.target.value)}
+                                                value={param.fullname}
+                                                onChange={e => onChangeFilter('fullname', e.target.value)}
                                             />
                                         </Form.Group>
-                                        <Form.Group className="col-md-2" controlId="category">
+                                        <Form.Group className="col-md-2" controlId="username">
+                                            <Form.Label>Username</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                size="sm"
+                                                value={param.username}
+                                                onChange={e => onChangeFilter('username', e.target.value)}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="col-md-2" controlId="user_level_id">
                                             <Form.Label>User Level</Form.Label>
                                             <Selectbox
-                                                option={optUserLevel}
+                                                option={optLevel}
                                                 changeValue={(value) => onChangeFilter('user_level_id', value)}
-                                                setValue={filter.user_level_id}
+                                                setValue={param.user_level_id}
                                                 isSmall={true}
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="col-md-2" controlId="email">
+                                            <Form.Label>Email</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                size="sm"
+                                                value={param.email}
+                                                onChange={e => onChangeFilter('email', e.target.value)}
                                             />
                                         </Form.Group>
                                     </Form.Row>
@@ -198,7 +201,7 @@ export const Users = () => {
                     <Col xl={12} md={12} className="mb-4">
                         <Card className="shadow h-100 py-2">
                             <Card.Header className="bg-white">
-                                <Button variant="outline-dark" size="sm" className="rounded-0" onClick={() => handleModal('add')}>
+                                <Button variant="outline-dark" size="sm" className="rounded-0" onClick={() => handleAction('add')}>
                                     Add Data
                                 </Button>
                             </Card.Header>
@@ -222,27 +225,27 @@ export const Users = () => {
                                                 Loading data...
                                             </td>
                                         </tr>}
-                                        {!loading && (!users.all.success || isEmptyValue(users.all?.total)) &&
+                                        {!loading && (all?.error || all?.result?.total === 0) &&
                                             <tr>
                                                 <td colSpan="7" className="text-center">
                                                     <span className="text-danger">No data found</span>
                                                 </td>
                                             </tr>
                                         }
-                                        {!loading && users.all.success && users.all?.total > 0 &&
-                                            users.all.data.map((row, i) => (
+                                        {!loading && all?.result?.total > 0 &&
+                                            all.result.data.map((row, i) => (
                                                 <tr key={row.id}>
-                                                    <td className="text-nowrap">{users.all.paging?.index[i]}</td>
+                                                    <td className="text-nowrap">{all.result.paging.index[i]}</td>
                                                     <td className="text-nowrap">{row.fullname}</td>
                                                     <td className="text-nowrap">{row.username}</td>
-                                                    <td className="text-nowrap">{row.user_level_id}</td>
+                                                    <td className="text-nowrap">{row.user_level}</td>
                                                     <td className="text-nowrap">{row.email}</td>
                                                     <td className="text-nowrap">{row.is_active === 1 ? <Badge variant="primary">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</td>
                                                     <td className="text-nowrap text-center">
-                                                        <Button variant="warning" size="sm" className="rounded-0 mx-1" title="Detail Data" onClick={() => handleModal('detail', row.id)}>
+                                                        <Button variant="warning" size="sm" className="rounded-0 mx-1" title="Detail Data" onClick={() => handleAction('detail', row.id)}>
                                                             <i className="fas fa-edit fa-fw"></i>
                                                         </Button>
-                                                        <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Delete Data" onClick={() => handleDelete(row.id)}>
+                                                        <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Remove Data" onClick={() => handleAction('remove', row.id)}>
                                                             <i className="fas fa-trash-alt fa-fw"></i>
                                                         </Button>
                                                     </td>
@@ -252,13 +255,13 @@ export const Users = () => {
                                     </tbody>
                                 </Table>
 
-                                {!loading && users.all.success && users.all?.paging &&
+                                {!loading && all?.result?.paging &&
                                     <Pagination
-                                        total={users.all.total}
-                                        limit={users.all.limit}
-                                        paging={users.all.paging}
-                                        changePage={(page) => {
-                                            setCurrentFilter({ ...currentFilter, page: page })
+                                        total={all.result.total}
+                                        limit={all.result.limit}
+                                        paging={all.result.paging}
+                                        changePage={(num) => {
+                                            setParam({ ...param, page: num })
                                             setLoading(true)
                                         }}
                                     />
@@ -280,17 +283,18 @@ export const Users = () => {
                 }}
             />} */}
 
-            {/* {modal.type === 'detail' && <Detail
-                show={modal.show}
-                close={() => handleModal()}
-                dataId={modal.dataId}
+            {action.type === 'detail' && <Detail
+                show={true}
+                close={() => handleAction()}
                 alert={(result) => {
                     if (result) {
                         setAlert({ ...alert, ...result })
                         if (result?.type === 'success') setLoading(true)  
                     }
+                    dispatch(usersActions.clearState())
                 }}
-            />} */}
+                id={action.dataId}
+            />}
         </>
     )
 }

@@ -9,7 +9,8 @@ const name = 'users'
 const initialState = createInitialState()
 const extraActions = createExtraActions()
 const extraReducers = createExtraReducers()
-const slice = createSlice({ name, initialState, extraReducers })
+const reducers = createReducers()
+const slice = createSlice({ name, initialState, reducers, extraReducers })
 
 // exports
 export const usersActions = { ...slice.actions, ...extraActions }
@@ -18,11 +19,23 @@ export const usersReducer = slice.reducer
 // implementation
 function createInitialState() {
     return {
-        all: { loading: false, success: null, result: null },
-        detail: { loading: false, success: null, result: null },
-        create: { loading: false, success: null, result: null },
-        update: { loading: false, success: null, result: null },
-        remove: { loading: false, success: null, result: null }
+        all: { loading: false },
+        detail: { loading: false },
+        create: { loading: false },
+        update: { loading: false },
+        remove: { loading: false },
+    }
+}
+
+function createReducers() {
+    const clearState = (state = initialState) => {
+        state.create = initialState.create
+        state.update = initialState.update
+        state.remove = initialState.remove
+    }
+
+    return {
+        clearState
     }
 }
 
@@ -119,26 +132,22 @@ function createExtraReducers() {
 
         return {
             [pending]: (state) => {
-                state.all = {
-                    loading: true,
-                    success: null
-                }
+                state.all.loading = true
             },
             [fulfilled]: (state, action) => {
-                const { success, total_data, data, paging } = action.payload
+                const { total_data, data, paging } = action.payload
+                const limit = action.meta.arg?.param?.limit || 20
 
                 let result = {
-                    loading: false,
-                    success: success,
                     total: total_data,
                     data: data,
-                    limit: action.meta.arg?.limit || 20
+                    limit: limit
                 }
 
                 if (paging) {
                     const pagingInfo = PaginationInfo({
                         total: total_data,
-                        limit: result.limit,
+                        limit: limit,
                         current: paging.current
                     })
 
@@ -148,16 +157,14 @@ function createExtraReducers() {
                     }
                 }
 
-                state.all = result
+                state.all.result = result
+                state.all.loading = false
             },
             [rejected]: (state, action) => {
-                const { success, message } = action.error
+                const { message } = action.error
 
-                state.all = {
-                    loading: false,
-                    success: success,
-                    message: message
-                }
+                state.all.error = message
+                state.all.loading = false
             }
         }
     }
@@ -167,29 +174,23 @@ function createExtraReducers() {
 
         return {
             [pending]: (state) => {
-                state.detail = {
-                    loading: true,
-                    success: null
-                }
+                state.detail.loading = true
             },
             [fulfilled]: (state, action) => {
-                const { success, total_data, data } = action.payload
+                const { total_data, data } = action.payload
 
-                state.detail = {
-                    loading: false,
-                    success: success,
+                state.detail.result = {
                     total: total_data,
                     data: data
                 }
+
+                state.detail.loading = false
             },
             [rejected]: (state, action) => {
-                const { success, message } = action.error
+                const { message } = action.error
 
-                state.detail = {
-                    loading: false,
-                    success: success,
-                    message: message
-                }
+                state.detail.error = message
+                state.detail.loading = false
             }
         }
     }
@@ -199,29 +200,23 @@ function createExtraReducers() {
 
         return {
             [pending]: (state) => {
-                state.create = {
-                    loading: true,
-                    success: null
-                }
+                state.create.loading = true
             },
             [fulfilled]: (state, action) => {
-                const { success, total_data, data } = action.payload
+                const { total_data, data } = action.payload
 
-                state.create = {
-                    loading: false,
-                    success: success,
+                state.create.result = {
                     total: total_data,
                     data: data
                 }
+
+                state.create.loading = false
             },
             [rejected]: (state, action) => {
-                const { success, message } = action.error
+                const { message } = action.error
 
-                state.create = {
-                    loading: false,
-                    success: success,
-                    message: message
-                }
+                state.create.error = message
+                state.create.loading = false
             }
         }
     }
@@ -231,29 +226,23 @@ function createExtraReducers() {
 
         return {
             [pending]: (state) => {
-                state.update = {
-                    loading: true,
-                    success: null
-                }
+                state.update.loading = true
             },
             [fulfilled]: (state, action) => {
-                const { success, total_data, data } = action.payload
+                const { total_data, data } = action.payload
 
-                state.update = {
-                    loading: false,
-                    success: success,
+                state.update.result = {
                     total: total_data,
                     data: data
                 }
+
+                state.update.loading = false
             },
             [rejected]: (state, action) => {
-                const { success, message } = action.error
+                const { message } = action.error
 
-                state.update = {
-                    loading: false,
-                    success: success,
-                    message: message
-                }
+                state.update.error = message
+                state.update.loading = false
             }
         }
     }
@@ -263,29 +252,23 @@ function createExtraReducers() {
 
         return {
             [pending]: (state) => {
-                state.remove = {
-                    loading: true,
-                    success: null
-                }
+                state.remove.loading = true
             },
             [fulfilled]: (state, action) => {
-                const { success, total_data, data } = action.payload
+                const { total_data, data } = action.payload
 
-                state.remove = {
-                    loading: false,
-                    success: success,
+                state.remove.loading = false
+                // state.remove.error = false
+                state.remove.result = {
                     total: total_data,
                     data: data
                 }
             },
             [rejected]: (state, action) => {
-                const { success, message } = action.error
+                const { message } = action.error
 
-                state.remove = {
-                    loading: false,
-                    success: success,
-                    message: message
-                }
+                state.remove.loading = false
+                state.remove.error = message
             }
         }
     }

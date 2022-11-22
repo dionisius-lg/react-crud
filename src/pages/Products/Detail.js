@@ -4,25 +4,21 @@ import { Modal, Form, Button, Spinner } from "react-bootstrap";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productsActions } from "./../../store";
-import { isEmptyValue } from "./../../helpers/general";
+import { isEmptyValue, defaultOpt } from "./../../helpers/general";
 import Selectbox from "./../../components/Selectbox";
 import * as yup from "yup";
 
-const Detail = ({ show, close, dataId, alert }) => {
+const Detail = ({ show = false, close, alert, id }) => {
     const defaultVal = {
         name: '',
         product_category_id: ''
     }
-    const defaultOpt = {
-        value: '',
-        label: 'Choose...'
-    }
 
     const dispatch = useDispatch()
     const { detail, update } = useSelector(x => x.products)
-    const productCategories = useSelector(x => x.productCategories)
+    const categories = useSelector(x => x.productCategories.all)
     const [modalShow, setModalShow] = useState(false)
-    const [optProductCategory, setOptProductCategory] = useState([defaultOpt])
+    const [optCategory, setOptCategory] = useState(defaultOpt)
 
     const handleClose = () => {
         setModalShow(false)
@@ -63,62 +59,58 @@ const Detail = ({ show, close, dataId, alert }) => {
         //     }
         // })
 
-        await dispatch(productsActions.update({ id: dataId, data }))
+        await dispatch(productsActions.update({ id, data }))
 
         return handleClose()
     }
 
     useEffect(() => {
-        if (show !== false) setModalShow(true)
+        if (!isEmptyValue(id)) dispatch(productsActions.getDetail({ id }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [show])
-
-    useEffect(() => {
-        if (!isEmptyValue(dataId)) dispatch(productsActions.getDetail({ id: dataId }))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataId])
+    }, [id])
 
     useEffect(() => {
         const fetchData = () => {
+            setModalShow(true)
             return reset({
                 ...defaultVal,
-                name: detail.data.name,
-                product_category_id: detail.data.product_category_id,
+                name: detail.result.data.name,
+                product_category_id: detail.result.data.product_category_id,
             }, {keepErrors: false})
         }
 
-        if (!detail.loading && detail?.total > 0) fetchData()
-        return () => reset(defaultVal, {keepErrors: false})
+        if (show && !detail.loading && detail?.result) fetchData()
+        return () => setModalShow(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detail])
+    }, [show, detail])
 
     useEffect(() => {
-        if (!update.loading && update.success === true) handleAlert('success')
-        if (!update.loading && update.success === false) handleAlert('error')
+        if (!update.loading && update?.result) handleAlert('success')
+        if (!update.loading && update?.error) handleAlert('error')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [update])
 
     useEffect(() => {
         const fetchData = () => {
-            let mapData = productCategories.all.data.map((row) => {
+            console.log(categories.result.data)
+            let mapData = categories.result.data.map((row) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptProductCategory([
-                ...optProductCategory,
+            setOptCategory([
+                ...defaultOpt,
                 ...mapData
             ])
         }
+        if (!categories.loading && categories?.result?.total > 0) fetchData()
 
-        if (productCategories.all.success && productCategories.all?.total > 0) fetchData()
-
-        return () => setOptProductCategory([defaultOpt])
+        return () => setOptCategory(defaultOpt)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [productCategories.all.loading])
+    }, [categories])
 
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="sm">
-            <Modal.Header closeButton>
+            <Modal.Header closeButton={isSubmitting ? false : true}>
                 <Modal.Title as="h5">Detail Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>
@@ -141,7 +133,7 @@ const Detail = ({ show, close, dataId, alert }) => {
                             render={({ field: { onChange } }) => {
                                 return (
                                     <Selectbox
-                                        option={optProductCategory}
+                                        option={optCategory}
                                         changeValue={(value) => onChange(value)}
                                         setValue={getValues('product_category_id')}
                                         isSmall={true}

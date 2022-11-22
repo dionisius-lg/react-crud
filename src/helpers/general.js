@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { EncryptStorage } from "encrypt-storage";
 import moment from "moment";
+import { EncryptStorage } from "encrypt-storage";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 
 export const isEmptyValue = (value) => {
     return (
@@ -64,6 +65,19 @@ export const encryptStorage = new EncryptStorage(process.env.REACT_APP_SECRET_KE
     storageType: 'sessionStorage',
 })
 
+export const reactSwal = withReactContent(Swal.mixin({
+    customClass: {
+        confirmButton: 'btn btn-primary rounded-0 mr-2',
+        cancelButton: 'btn btn-default rounded-0'
+    },
+    buttonsStyling: false
+}))
+
+export const defaultOpt = [{
+    value: '',
+    label: 'Choose...'
+}]
+
 export const diffDate = (value1, value2) => {
     const date1 = moment(value1)
     const date2 = moment(value2)
@@ -78,7 +92,6 @@ export const diffDate = (value1, value2) => {
 export const sleep = (milliseconds) => {
     return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
-
 
 export const strTok = (string, separator = null) => {
     if (isEmptyValue(separator)) {
