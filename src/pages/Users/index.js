@@ -7,12 +7,13 @@ import { usersActions, userLevelsActions } from "./../../store";
 import { reactSwal, defaultOpt } from "./../../helpers/general";
 import Pagination from "./../../components/Pagination";
 import Alert from "./../../components/Alert";
-import Selectbox from "./../../components/Selectbox";
-// import Add from "./Add";
+import Select from "./../../components/Select";
+import Add from "./Add";
 import Detail from "./Detail";
 
 export const Users = () => {
     const dispatch = useDispatch()
+    const { user: authUser } = useSelector(x => x.auth)
     const { all, remove } = useSelector(x => x.users)
     const levels = useSelector(x => x.userLevels.all)
     const [loading, setLoading] = useState(true)
@@ -29,7 +30,7 @@ export const Users = () => {
         type: null,
         dataId: 0
     })
-    const [optLevel, setOptLevel] = useState(defaultOpt)
+    const [optionLevel, setOptionLevel] = useState(defaultOpt)
 
     const onChangeFilter = (key, val) => {
         setParam({ ...param, [key]: val })
@@ -58,7 +59,7 @@ export const Users = () => {
     }, [])
 
     useEffect(() => {
-        if (loading === true) dispatch(usersActions.getAll({ param }))
+        if (loading) dispatch(usersActions.getAll({ param }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading])
 
@@ -73,19 +74,19 @@ export const Users = () => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptLevel([
+            setOptionLevel([
                 ...defaultOpt,
                 ...mapData
             ])
         }
-        if (!levels.loading && levels?.result?.total > 0) fetchData()
 
-        return () => setOptLevel(defaultOpt)
+        if (!levels.loading && !levels.error && levels?.result?.total > 0) fetchData()
+        return () => setOptionLevel(defaultOpt)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [levels])
 
     useEffect(() => {
-        if (!remove.loading && remove?.error) {
+        if (!remove.loading && remove.error) {
             setAlert({
                 ...alert,
                 type: 'error',
@@ -94,11 +95,11 @@ export const Users = () => {
             })
         }
 
-        if (!remove.loading && remove?.result) {
+        if (!remove.loading && !remove.error && remove?.result) {
             setAlert({
                 ...alert,
                 type: 'success',
-                message: 'Remove data success.',
+                message: 'Data successfully removed.',
                 show: true
             })
             setLoading(true)
@@ -131,7 +132,7 @@ export const Users = () => {
         <>
             <Container fluid>
                 <div className="d-sm-flex align-items-center justify-content-between my-4">
-                    <h1 className="h3 mb-0 text-gray-800">Products</h1>
+                    <h1 className="h3 mb-0 text-gray-800">Users</h1>
                 </div>
                 <div>
                     {!!alert && <Alert
@@ -171,11 +172,11 @@ export const Users = () => {
                                         </Form.Group>
                                         <Form.Group className="col-md-2" controlId="user_level_id">
                                             <Form.Label>User Level</Form.Label>
-                                            <Selectbox
-                                                option={optLevel}
+                                            <Select
+                                                option={optionLevel}
                                                 changeValue={(value) => onChangeFilter('user_level_id', value)}
                                                 setValue={param.user_level_id}
-                                                isSmall={true}
+                                                small={true}
                                             />
                                         </Form.Group>
                                         <Form.Group className="col-md-2" controlId="email">
@@ -225,14 +226,14 @@ export const Users = () => {
                                                 Loading data...
                                             </td>
                                         </tr>}
-                                        {!loading && (all?.error || all?.result?.total === 0) &&
+                                        {!loading && (all.error || all?.result?.total === 0) &&
                                             <tr>
                                                 <td colSpan="7" className="text-center">
                                                     <span className="text-danger">No data found</span>
                                                 </td>
                                             </tr>
                                         }
-                                        {!loading && all?.result?.total > 0 &&
+                                        {!loading && !all.error && all?.result &&
                                             all.result.data.map((row, i) => (
                                                 <tr key={row.id}>
                                                     <td className="text-nowrap">{all.result.paging.index[i]}</td>
@@ -245,9 +246,11 @@ export const Users = () => {
                                                         <Button variant="warning" size="sm" className="rounded-0 mx-1" title="Detail Data" onClick={() => handleAction('detail', row.id)}>
                                                             <i className="fas fa-edit fa-fw"></i>
                                                         </Button>
-                                                        <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Remove Data" onClick={() => handleAction('remove', row.id)}>
-                                                            <i className="fas fa-trash-alt fa-fw"></i>
-                                                        </Button>
+                                                        {row.id !== authUser?.id && row.user_level_id !== 1 &&
+                                                            <Button variant="danger" size="sm" className="rounded-0 mx-1" title="Remove Data" onClick={() => handleAction('remove', row.id)}>
+                                                                <i className="fas fa-trash-alt fa-fw"></i>
+                                                            </Button>
+                                                        }
                                                     </td>
                                                 </tr>
                                             ))
@@ -255,7 +258,7 @@ export const Users = () => {
                                     </tbody>
                                 </Table>
 
-                                {!loading && all?.result?.paging &&
+                                {!loading && !all.error && all?.result?.paging &&
                                     <Pagination
                                         total={all.result.total}
                                         limit={all.result.limit}
@@ -272,16 +275,17 @@ export const Users = () => {
                 </Row>
             </Container>
 
-            {/* {modal.type === 'add' && <Add
-                show={modal.show}
-                close={() => handleModal()}
+            {action.type === 'add' && <Add
+                show={true}
+                close={() => handleAction()}
                 alert={(result) => {
                     if (result) {
                         setAlert({ ...alert, ...result })
                         if (result?.type === 'success') setLoading(true)  
                     }
+                    dispatch(usersActions.clearState())
                 }}
-            />} */}
+            />}
 
             {action.type === 'detail' && <Detail
                 show={true}

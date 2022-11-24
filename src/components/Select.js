@@ -1,9 +1,9 @@
-import Select from "react-select";
+import ReactSelect from "react-select";
 import classnames from "classnames";
 
-const Selectbox = ({ option, changeValue, setValue, isError = false, isSmall = false }) => {
+const Select = ({ option, changeValue, setValue, error = false, small = false }) => {
     return (
-        <Select
+        <ReactSelect
             options={option}
             onChange={(selected) => {
                 changeValue(selected.value)
@@ -12,15 +12,15 @@ const Selectbox = ({ option, changeValue, setValue, isError = false, isSmall = f
                 return opt.value === setValue
             })}
             className={classnames({
-                'is-invalid': isError
+                'is-invalid': error
             })}
-            styles={StyleSelectbox(isError, isSmall)}
+            styles={SelectStyle(error, small)}
             placeholder="Choose..."
         />
     )
 }
 
-const StyleSelectbox = (error, small) => {
+const SelectStyle = (error, small) => {
     if (small) {
         return {
             container:  (provided, state) => ({
@@ -74,4 +74,4 @@ const StyleSelectbox = (error, small) => {
     }
 }
 
-export default Selectbox
+export default Select

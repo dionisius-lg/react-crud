@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productsActions } from "./../../store";
 import { isEmptyValue, defaultOpt } from "./../../helpers/general";
-import Selectbox from "./../../components/Selectbox";
+import Select from "./../../components/Select";
 import * as yup from "yup";
 
 const Detail = ({ show = false, close, alert, id }) => {
@@ -18,7 +18,7 @@ const Detail = ({ show = false, close, alert, id }) => {
     const { detail, update } = useSelector(x => x.products)
     const categories = useSelector(x => x.productCategories.all)
     const [modalShow, setModalShow] = useState(false)
-    const [optCategory, setOptCategory] = useState(defaultOpt)
+    const [optionCategory, setOptionCategory] = useState(defaultOpt)
 
     const handleClose = () => {
         setModalShow(false)
@@ -29,7 +29,7 @@ const Detail = ({ show = false, close, alert, id }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
+                message: type === 'success' ? 'Data successfully saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -79,14 +79,14 @@ const Detail = ({ show = false, close, alert, id }) => {
             }, {keepErrors: false})
         }
 
-        if (show && !detail.loading && detail?.result) fetchData()
+        if (show && !detail.loading && !detail.error && detail?.result) fetchData()
         return () => setModalShow(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [show, detail])
 
     useEffect(() => {
-        if (!update.loading && update?.result) handleAlert('success')
-        if (!update.loading && update?.error) handleAlert('error')
+        if (!update.loading && update.error) handleAlert('error')
+        if (!update.loading && !update.error && update?.result) handleAlert('success')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [update])
 
@@ -97,14 +97,14 @@ const Detail = ({ show = false, close, alert, id }) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptCategory([
+            setOptionCategory([
                 ...defaultOpt,
                 ...mapData
             ])
         }
         if (!categories.loading && categories?.result?.total > 0) fetchData()
 
-        return () => setOptCategory(defaultOpt)
+        return () => setOptionCategory(defaultOpt)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categories])
 
@@ -132,12 +132,12 @@ const Detail = ({ show = false, close, alert, id }) => {
                             control={control}
                             render={({ field: { onChange } }) => {
                                 return (
-                                    <Selectbox
-                                        option={optCategory}
+                                    <Select
+                                        option={optionCategory}
                                         changeValue={(value) => onChange(value)}
                                         setValue={getValues('product_category_id')}
-                                        isSmall={true}
-                                        isError={!!errors.product_category_id ? true : false}
+                                        small={true}
+                                        error={!!errors.product_category_id ? true : false}
                                     />
                                 )
                             }}

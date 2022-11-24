@@ -10,6 +10,7 @@ import { store } from './store';
 // import './assets/css/global.css';
 import './assets/css/sbadmin2.css';
 import './assets/vendor/fontawesome-free/css/all.min.css';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

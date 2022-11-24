@@ -19,11 +19,11 @@ export const productsReducer = slice.reducer
 // implementation
 function createInitialState() {
     return {
-        all: { loading: false },
-        detail: { loading: false },
-        create: { loading: false },
-        update: { loading: false },
-        remove: { loading: false },
+        all: { error: null, loading: false },
+        detail: { error: null, loading: false },
+        create: { error: null, loading: false },
+        update: { error: null, loading: false },
+        remove: { error: null, loading: false },
     }
 }
 
@@ -133,6 +133,7 @@ function createExtraReducers() {
         return {
             [pending]: (state) => {
                 state.all.loading = true
+                state.all.error = null
             },
             [fulfilled]: (state, action) => {
                 const { total_data, data, paging } = action.payload
@@ -157,14 +158,14 @@ function createExtraReducers() {
                     }
                 }
 
-                state.all.result = result
                 state.all.loading = false
+                state.all.result = result
             },
             [rejected]: (state, action) => {
                 const { message } = action.error
 
-                state.all.error = message
                 state.all.loading = false
+                state.all.error = message
             }
         }
     }
@@ -175,22 +176,22 @@ function createExtraReducers() {
         return {
             [pending]: (state) => {
                 state.detail.loading = true
+                state.detail.error = null
             },
             [fulfilled]: (state, action) => {
                 const { total_data, data } = action.payload
 
+                state.detail.loading = false
                 state.detail.result = {
                     total: total_data,
                     data: data
                 }
-
-                state.detail.loading = false
             },
             [rejected]: (state, action) => {
                 const { message } = action.error
 
-                state.detail.error = message
                 state.detail.loading = false
+                state.detail.error = message
             }
         }
     }
@@ -201,22 +202,22 @@ function createExtraReducers() {
         return {
             [pending]: (state) => {
                 state.create.loading = true
+                state.create.error = null
             },
             [fulfilled]: (state, action) => {
                 const { total_data, data } = action.payload
 
+                state.create.loading = false
                 state.create.result = {
                     total: total_data,
                     data: data
                 }
-
-                state.create.loading = false
             },
             [rejected]: (state, action) => {
                 const { message } = action.error
 
-                state.create.error = message
                 state.create.loading = false
+                state.create.error = message
             }
         }
     }
@@ -227,22 +228,22 @@ function createExtraReducers() {
         return {
             [pending]: (state) => {
                 state.update.loading = true
+                state.update.error = null
             },
             [fulfilled]: (state, action) => {
                 const { total_data, data } = action.payload
 
+                state.update.loading = false
                 state.update.result = {
                     total: total_data,
                     data: data
                 }
-
-                state.update.loading = false
             },
             [rejected]: (state, action) => {
                 const { message } = action.error
 
-                state.update.error = message
                 state.update.loading = false
+                state.update.error = message
             }
         }
     }
@@ -253,12 +254,12 @@ function createExtraReducers() {
         return {
             [pending]: (state) => {
                 state.remove.loading = true
+                state.remove.error = null
             },
             [fulfilled]: (state, action) => {
                 const { total_data, data } = action.payload
 
                 state.remove.loading = false
-                // state.remove.error = false
                 state.remove.result = {
                     total: total_data,
                     data: data

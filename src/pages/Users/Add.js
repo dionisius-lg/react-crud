@@ -10,7 +10,7 @@ import classnames from "classnames";
 import Datepicker from "react-datepicker";
 import * as yup from "yup";
 
-const Detail = ({ show = false, close, alert, id }) => {
+const Add = ({ show = false, close, alert }) => {
     const defaultVal = {
         fullname: '',
         username: '',
@@ -25,7 +25,7 @@ const Detail = ({ show = false, close, alert, id }) => {
     }
 
     const dispatch = useDispatch()
-    const { detail, update } = useSelector(x => x.users)
+    const { create } = useSelector(x => x.users)
     const levels = useSelector(x => x.userLevels.all)
     const provinces = useSelector(x => x.provinces.all)
     const cities = useSelector(x => x.cities.all)
@@ -44,7 +44,7 @@ const Detail = ({ show = false, close, alert, id }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
+                message: type === 'success' ? 'Data successfully saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -103,7 +103,7 @@ const Detail = ({ show = false, close, alert, id }) => {
             }
         })
 
-        await dispatch(usersActions.update({ id, data }))
+        await dispatch(usersActions.create({ data }))
 
         return handleClose()
     }
@@ -124,40 +124,18 @@ const Detail = ({ show = false, close, alert, id }) => {
     }, [])
 
     useEffect(() => {
-        if (!isEmptyValue(id)) dispatch(usersActions.getDetail({ id }))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id])
-
-    useEffect(() => {
-        const fetchData = () => {
+        if (show) {
             setModalShow(true)
-            setSelectedProvince(detail.result.data.province_id || '')
-            return reset({
-                ...defaultVal,
-                fullname: detail.result.data.fullname,
-                username: detail.result.data.username,
-                user_level_id: detail.result.data.user_level_id,
-                email: detail.result.data.email,
-                phone: detail.result.data.phone,
-                birth_date: detail.result.data.birth_date,
-                address: detail.result.data.address,
-                province_id: detail.result.data.province_id,
-                city_id: detail.result.data.city_id,
-                zip_code: detail.result.data.zip_code,
-                is_active: String(detail.result.data.is_active) === "1" ? "1" : false,
-            }, {keepErrors: false})
+            reset(defaultVal, {keepErrors: false})
         }
-
-        if (show && !detail.loading && detail?.result) fetchData()
-        return () => setModalShow(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [show, detail])
+    }, [show])
 
     useEffect(() => {
-        if (!update.loading && update?.result) handleAlert('success')
-        if (!update.loading && update?.error) handleAlert('error')
+        if (!create.loading && create.error) handleAlert('error')
+        if (!create.loading && !create.error && create?.result) handleAlert('success')
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [update])
+    }, [create])
 
     useEffect(() => {
         const fetchData = () => {
@@ -229,7 +207,7 @@ const Detail = ({ show = false, close, alert, id }) => {
     return (
         <Modal show={modalShow} onHide={handleClose} backdrop="static" keyboard={false} animation={false} size="lg">
             <Modal.Header closeButton={isSubmitting ? false : true}>
-                <Modal.Title as="h5">Detail Data</Modal.Title>
+                <Modal.Title as="h5">Add New Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>
                 <Modal.Body>
@@ -396,17 +374,9 @@ const Detail = ({ show = false, close, alert, id }) => {
                             <Form.Control.Feedback type="invalid">{errors.zip_code?.message}</Form.Control.Feedback>
                         </Form.Group>
                     </Row>
-                    <Row>
-                        <Form.Group className="col-md-12" controlId="active">
-                            <Form.Check
-                                custom
-                                type="checkbox"
-                                label="Active"
-                                value="1"
-                                {...register('is_active')}
-                            />
-                        </Form.Group>
-                    </Row>
+                    <Form.Text className="font-italic" muted>
+                        * Default password for new user same as <strong>username</strong>.
+                    </Form.Text>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button type="submit" variant="dark" size="sm" className="rounded-0" disabled={isSubmitting}>
@@ -419,4 +389,4 @@ const Detail = ({ show = false, close, alert, id }) => {
     )
 }
 
-export default Detail
+export default Add

@@ -42,7 +42,7 @@ export const ProductCategories = () => {
     }
 
     useEffect(() => {
-        if (loading === true) dispatch(productCategoriesActions.getAll({ param }))
+        if (loading) dispatch(productCategoriesActions.getAll({ param }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading])
 
@@ -52,7 +52,7 @@ export const ProductCategories = () => {
     }, [all])
 
     useEffect(() => {
-        if (!remove.loading && remove?.error) {
+        if (!remove.loading && remove.error) {
             setAlert({
                 ...alert,
                 type: 'error',
@@ -61,11 +61,11 @@ export const ProductCategories = () => {
             })
         }
 
-        if (!remove.loading && remove?.result) {
+        if (!remove.loading && !remove.error && remove?.result) {
             setAlert({
                 ...alert,
                 type: 'success',
-                message: 'Remove data success.',
+                message: 'Data successfully removed.',
                 show: true
             })
             setLoading(true)
@@ -161,14 +161,14 @@ export const ProductCategories = () => {
                                                 Loading data...
                                             </td>
                                         </tr>}
-                                        {!loading && (all?.error || all?.result?.total === 0) &&
+                                        {!loading && (all.error || all?.result?.total === 0) &&
                                             <tr>
                                                 <td colSpan="3" className="text-center">
                                                     <span className="text-danger">No data found</span>
                                                 </td>
                                             </tr>
                                         }
-                                        {!loading && all?.result &&
+                                        {!loading && !all.error && all?.result &&
                                             all.result.data.map((row, i) => (
                                                 <tr key={row.id}>
                                                     <td className="text-nowrap">{all.result.paging.index[i]}</td>
@@ -187,7 +187,7 @@ export const ProductCategories = () => {
                                     </tbody>
                                 </Table>
 
-                                {!loading && all?.result?.paging &&
+                                {!loading && !all.error && all?.result?.paging &&
                                     <Pagination
                                         total={all.result.total}
                                         limit={all.result.limit}

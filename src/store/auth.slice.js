@@ -87,7 +87,10 @@ function createExtraReducers() {
                 state.user = data
             },
             [rejected]: (state, action) => {
-                state.error = { message: 'Unauthorized' }
+                const { message } = action.error
+
+                // state.error = message
+                state.error = 'Unauthorized'
                 state.loading = false
             }
         }
@@ -116,7 +119,10 @@ function createExtraReducers() {
                 history.navigate(from)
             },
             [rejected]: (state, action) => {
-                state.error = { message: 'Unauthorized' }
+                const { message } = action.error
+
+                // state.error = message
+                state.error = 'Unauthorized'
                 state.loading = false
             }
         }

@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { productsActions } from "./../../store";
 import { defaultOpt } from "./../../helpers/general";
-import Selectbox from "./../../components/Selectbox";
+import Select from "./../../components/Select";
 import * as yup from "yup";
 
 const Add = ({ show = false, close, alert }) => {
@@ -18,7 +18,7 @@ const Add = ({ show = false, close, alert }) => {
     const { create } = useSelector(x => x.products)
     const categories = useSelector(x => x.productCategories.all)
     const [modalShow, setModalShow] = useState(false)
-    const [optCategory, setOptCategory] = useState(defaultOpt)
+    const [optionCategory, setoptionCategory] = useState(defaultOpt)
 
     const handleClose = () => {
         setModalShow(false)
@@ -29,7 +29,7 @@ const Add = ({ show = false, close, alert }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
+                message: type === 'success' ? 'Data successfully saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -59,7 +59,7 @@ const Add = ({ show = false, close, alert }) => {
     }
 
     useEffect(() => {
-        if (!!show) {
+        if (show) {
             setModalShow(true)
             reset(defaultVal, {keepErrors: false})
         }
@@ -67,8 +67,8 @@ const Add = ({ show = false, close, alert }) => {
     }, [show])
 
     useEffect(() => {
-        if (!create.loading && create?.result) handleAlert('success')
-        if (!create.loading && create?.error) handleAlert('error')
+        if (!create.loading && create.error) handleAlert('error')
+        if (!create.loading && !create.error && create?.result) handleAlert('success')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [create])
 
@@ -79,14 +79,14 @@ const Add = ({ show = false, close, alert }) => {
                 return { value: row.id, label: row.name }
             })
 
-            setOptCategory([
+            setoptionCategory([
                 ...defaultOpt,
                 ...mapData
             ])
         }
         if (!categories.loading && categories?.result?.total > 0) fetchData()
 
-        return () => setOptCategory(defaultOpt)
+        return () => setoptionCategory(defaultOpt)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categories])
 
@@ -96,7 +96,7 @@ const Add = ({ show = false, close, alert }) => {
                 <Modal.Title as="h5">Add New Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>
-                <Modal.Body className="">
+                <Modal.Body>
                     <Form.Group>
                         <Form.Label>Name <span className="text-danger">*</span></Form.Label>
                         <Form.Control
@@ -114,12 +114,12 @@ const Add = ({ show = false, close, alert }) => {
                             control={control}
                             render={({ field: { onChange } }) => {
                                 return (
-                                    <Selectbox
-                                        option={optCategory}
+                                    <Select
+                                        option={optionCategory}
                                         changeValue={(value) => onChange(value)}
                                         setValue={getValues('product_category_id')}
-                                        isSmall={true}
-                                        isError={!!errors.product_category_id ? true : false}
+                                        small={true}
+                                        error={!!errors.product_category_id ? true : false}
                                     />
                                 )
                             }}

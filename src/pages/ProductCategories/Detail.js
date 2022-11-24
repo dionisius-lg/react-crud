@@ -25,7 +25,7 @@ const Detail = ({ show = false, close, alert, id }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
+                message: type === 'success' ? 'Data successfully saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -72,14 +72,14 @@ const Detail = ({ show = false, close, alert, id }) => {
             }, {keepErrors: false})
         }
 
-        if (show && !detail.loading && detail?.result) fetchData()
+        if (show && !detail.loading && !detail.error && detail?.result) fetchData()
         return () => setModalShow(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [show, detail])
 
     useEffect(() => {
-        if (!update.loading && update?.result) handleAlert('success')
-        if (!update.loading && update?.error) handleAlert('error')
+        if (!update.loading && update.error) handleAlert('error')
+        if (!update.loading && !update.error && update?.result) handleAlert('success')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [update])
 

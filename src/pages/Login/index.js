@@ -25,7 +25,7 @@ export const Login = () => {
     }, [user, loading])
 
     useEffect(() => {
-        if (error) setAlert({ type: 'error', message: error.message, show: true })
+        if (error) setAlert({ type: 'error', message: error, show: true })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 

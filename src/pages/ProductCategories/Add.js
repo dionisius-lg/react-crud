@@ -24,7 +24,7 @@ const Add = ({ show = false, close, alert }) => {
         if (typeof alert === 'function' && ['success', 'error'].includes(type)) {
             let result = {
                 type: type,
-                message: type === 'success' ? 'Data has been saved.' : 'Failed to save data.',
+                message: type === 'success' ? 'Data successfully saved.' : 'Failed to save data.',
                 show: true
             }
 
@@ -52,7 +52,7 @@ const Add = ({ show = false, close, alert }) => {
     }
 
     useEffect(() => {
-        if (!!show) {
+        if (show) {
             setModalShow(true)
             reset(defaultVal, {keepErrors: false})
         }
@@ -60,8 +60,8 @@ const Add = ({ show = false, close, alert }) => {
     }, [show])
 
     useEffect(() => {
-        if (!create.loading && create?.result) handleAlert('success')
-        if (!create.loading && create?.error) handleAlert('error')
+        if (!create.loading && create.error) handleAlert('error')
+        if (!create.loading && !create.error && create?.result) handleAlert('success')
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [create])
 
@@ -71,7 +71,7 @@ const Add = ({ show = false, close, alert }) => {
                 <Modal.Title as="h5">Add New Data</Modal.Title>
             </Modal.Header>
             <Form autoComplete="off" onSubmit={handleSubmit(onSubmitData)}>
-                <Modal.Body className="">
+                <Modal.Body>
                     <Form.Group>
                         <Form.Label>Name <span className="text-danger">*</span></Form.Label>
                         <Form.Control
